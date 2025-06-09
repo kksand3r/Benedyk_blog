@@ -16,6 +16,8 @@ class BlogPostObserver
     {
         $this->setPublishedAt($blogPost);
         $this->setSlug($blogPost);
+        $this->setHtml($blogPost);
+        $this->setUser($blogPost);
     }
 
     /**
@@ -26,6 +28,7 @@ class BlogPostObserver
     {
         $this->setPublishedAt($blogPost);
         $this->setSlug($blogPost);
+        $this->setHtml($blogPost);
 
         if (empty($blogPost->user_id)) {
             $blogPost->user_id = auth()->id() ?? 1;
@@ -38,8 +41,12 @@ class BlogPostObserver
      */
     protected function setPublishedAt(BlogPost $blogPost): void
     {
-        if (empty($blogPost->published_at) && $blogPost->is_published) {
+        if ($blogPost->is_published && empty($blogPost->published_at)) {
             $blogPost->published_at = Carbon::now();
+        }
+
+        elseif (!$blogPost->is_published && !empty($blogPost->published_at)) {
+            $blogPost->published_at = null; // Обнуляємо дату публікації
         }
     }
 
@@ -52,5 +59,29 @@ class BlogPostObserver
         if (empty($blogPost->slug)) {
             $blogPost->slug = Str::slug($blogPost->title);
         }
+    }
+
+    /**
+     * Встановлюємо значення полю content_html з поля content_raw.
+     *
+     * @param BlogPost $blogPost
+     * @return void
+     */
+    protected function setHtml(BlogPost $blogPost): void
+    {
+        if ($blogPost->isDirty('content_raw')) {
+            $blogPost->content_html = $blogPost->content_raw;
+        }
+    }
+
+    /**
+     * Якщо user_id не вказано, то встановимо юзера 1 (UNKNOWN_USER).
+     *
+     * @param BlogPost $blogPost
+     * @return void
+     */
+    protected function setUser(BlogPost $blogPost): void
+    {
+        $blogPost->user_id = auth()->id() ?? BlogPost::UNKNOWN_USER;
     }
 }
