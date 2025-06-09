@@ -4,18 +4,25 @@ namespace App\Http\Controllers\Blog\Admin;
 
 use App\Repositories\BlogPostRepository;
 use Illuminate\Http\Request;
+use App\Repositories\BlogCategoryRepository;
+use App\Http\Requests\BlogPostUpdateRequest;
+use App\Http\Requests\BlogPostCreateRequest;
+use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class PostController extends BaseController
 {
     /**
-     * @var BlogPostRepository
+     * @var BlogCategoryRepository
      */
+    private $blogCategoryRepository;
     private $blogPostRepository;
 
     public function __construct()
     {
         parent::__construct();
         $this->blogPostRepository = app(BlogPostRepository::class);
+        $this->blogCategoryRepository = app(BlogCategoryRepository::class);
     }
 
     /**
@@ -57,15 +64,50 @@ class PostController extends BaseController
      */
     public function edit(string $id)
     {
-        //
+        $item = $this->blogPostRepository->getEdit($id);
+        if (empty($item)) {
+            abort(404);
+        }
+        $categoryList = $this->blogCategoryRepository->getForComboBox();
+
+        return view('blog.admin.posts.edit', compact('item', 'categoryList'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(BlogPostUpdateRequest $request, string $id)
     {
-        //
+        $item = $this->blogPostRepository->getEdit($id);
+        if (empty($item)) {
+            return back()
+                ->withErrors(['msg' => "Запис id=[{$id}] не знайдено"])
+                ->withInput();
+        }
+
+        $data = $request->validated();
+
+        if (empty($data['slug'])) {
+            $data['slug'] = Str::slug($data['title']);
+        }
+
+        if (empty($item->published_at) && !empty($data['is_published'])) {
+            $data['published_at'] = Carbon::now();
+        } elseif (empty($data['is_published'])) {
+            $data['published_at'] = null;
+        }
+
+        $result = $item->update($data);
+
+        if ($result) {
+            return redirect()
+                ->route('blog.admin.posts.edit', $item->id)
+                ->with(['success' => 'Успішно збережено']);
+        } else {
+            return back()
+                ->withErrors(['msg' => 'Помилка збереження'])
+                ->withInput();
+        }
     }
 
     /**
