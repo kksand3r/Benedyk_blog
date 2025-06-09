@@ -1,21 +1,31 @@
 <?php
 
-namespace App\Http\Controllers\Blog;
+namespace App\Http\Controllers\Blog\Admin;
 
-use App\Models\BlogPost;
-use App\Http\Controllers\Controller;
+use App\Repositories\BlogPostRepository;
 use Illuminate\Http\Request;
 
 class PostController extends BaseController
 {
     /**
+     * @var BlogPostRepository
+     */
+    private $blogPostRepository;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->blogPostRepository = app(BlogPostRepository::class);
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(): \Illuminate\Contracts\View\View|\Illuminate\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\Foundation\Application
     {
-        $items = BlogPost::all();
+        $paginator = $this->blogPostRepository->getAllWithPaginate();
 
-        return view('blog.posts.index', compact('items'));
+        return view('blog.admin.posts.index', compact('paginator'));
     }
 
     /**

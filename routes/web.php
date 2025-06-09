@@ -35,4 +35,8 @@ Route::group($groupData, function () {
     Route::resource('categories', CategoryController::class)
         ->only($methods)
         ->names('blog.admin.categories');
+
+    Route::resource('posts', \App\Http\Controllers\Blog\Admin\PostController::class)
+        ->except(['show'])
+        ->names('blog.admin.posts');
 });
