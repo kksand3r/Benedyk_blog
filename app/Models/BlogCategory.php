@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class BlogCategory extends Model
 {
     use SoftDeletes;
-    const ROOT = 1;
     use HasFactory;
+
+    const ROOT = 1; // Додано
 
     protected $fillable
         = [
@@ -27,8 +28,17 @@ class BlogCategory extends Model
      */
     public function parentCategory()
     {
-        // Категорія належить іншій категорії (батьківській)
         return $this->belongsTo(BlogCategory::class, 'parent_id', 'id');
+    }
+
+    public function childrenCategories()
+    {
+        return $this->hasMany(BlogCategory::class, 'parent_id');
+    }
+
+    public function blogPosts()
+    {
+        return $this->hasMany(BlogPost::class, 'category_id');
     }
 
     /**
@@ -58,4 +68,8 @@ class BlogCategory extends Model
     {
         return $this->id === self::ROOT;
     }
+
+    protected $casts = [
+        'parent_id' => 'integer',
+    ];
 }
